@@ -1,0 +1,714 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Event Merch Flow Pro - Gestão de Inventário & Fechamento Financeiro</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        :root { 
+            --palmeiras-green: #006437; 
+            --palmeiras-light: #00854c;
+            --bg: #040a06; 
+            --card: #0b140f; 
+            --gold: #d4af37; 
+            --text: #ffffff; 
+            --border: #16261c; 
+            --danger: #ff4d4d; 
+            --success: #2bc466; 
+            --pix: #2ecc71; 
+            --card-tag: #e0e0e0;
+            --brinde: #3498db; 
+        }
+
+        * { box-sizing: border-box; }
+
+        body { 
+            font-family: 'Inter', system-ui, -apple-system, sans-serif; 
+            background: var(--bg); 
+            color: var(--text); 
+            padding: clamp(8px, 1.2vw, 18px); 
+            margin: 0; 
+            font-size: clamp(12px, 0.85vw, 14px);
+            min-height: 100vh;
+        }
+        
+        .container { 
+            width: 100%;
+            max-width: min(98vw, 1750px); 
+            margin: auto; 
+            background: var(--card); 
+            padding: clamp(12px, 1.5vw, 24px); 
+            border-radius: 12px; 
+            border: 1px solid var(--gold); 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.85); 
+        }
+        
+        .header-banner {
+            background: var(--palmeiras-green);
+            margin: clamp(-12px, -1.5vw, -24px) clamp(-12px, -1.5vw, -24px) 18px clamp(-12px, -1.5vw, -24px);
+            padding: clamp(10px, 1.2vw, 16px);
+            border-radius: 11px 11px 0 0;
+            border-bottom: 3px solid var(--gold);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .header-banner h2 { 
+            margin: 0; 
+            color: var(--gold); 
+            text-transform: uppercase; 
+            letter-spacing: 2px; 
+            font-weight: 300; 
+            font-size: clamp(16px, 1.8vw, 22px);
+        }
+
+        .btn-toggle-privacidade {
+            background: #040a06;
+            color: var(--gold);
+            border: 1px solid var(--gold);
+            padding: 6px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 11px;
+            font-weight: bold;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            text-transform: uppercase;
+            transition: all 0.2s ease;
+        }
+        .btn-toggle-privacidade:hover {
+            background: #0f1f15;
+        }
+        
+        .event-info { 
+            display: flex; 
+            gap: 12px; 
+            margin-bottom: 15px; 
+            justify-content: center; 
+            flex-wrap: wrap; 
+        }
+        .input-event { 
+            background: #0f1f15; 
+            border: 1px solid var(--gold); 
+            color: white; 
+            padding: 8px 12px; 
+            border-radius: 5px; 
+            outline: none; 
+            width: clamp(200px, 25vw, 360px);
+            font-size: 13px;
+        }
+        
+        .config-header { 
+            display: flex; 
+            gap: 15px; 
+            background: #0f1f15; 
+            padding: 10px 15px; 
+            border-radius: 8px; 
+            margin-bottom: 18px; 
+            justify-content: center; 
+            border: 1px solid var(--border); 
+            flex-wrap: wrap; 
+            font-size: 13px; 
+        }
+        .config-input { 
+            background: #040a06; 
+            color: var(--gold); 
+            border: 1px solid var(--gold); 
+            width: 65px; 
+            text-align: center; 
+            border-radius: 4px; 
+            padding: 4px; 
+            outline: none; 
+            font-weight: bold; 
+        }
+        
+        .finance-grid { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); 
+            gap: 10px; 
+            margin-bottom: 18px; 
+        }
+        .fin-box { 
+            background: #0f1f15; 
+            padding: clamp(10px, 1.2vw, 15px); 
+            border-radius: 8px; 
+            text-align: center; 
+            border: 1px solid var(--border); 
+        }
+        .fin-box span { 
+            font-size: 11px; 
+            text-transform: uppercase; 
+            color: #8a9e94; 
+            font-weight: bold; 
+            display: block; 
+        }
+        .fin-box b { 
+            font-size: clamp(16px, 1.4vw, 22px); 
+            color: var(--gold); 
+            display: block; 
+            margin-top: 6px; 
+            font-family: monospace; 
+            letter-spacing: 0.5px;
+        }
+        
+        .table-responsive { 
+            width: 100%; 
+            overflow-x: auto; 
+            margin-bottom: 18px; 
+            -webkit-overflow-scrolling: touch; 
+        }
+        table { 
+            width: 100%; 
+            border-collapse: collapse; 
+            min-width: 860px; 
+        }
+        th { 
+            border-bottom: 2px solid var(--gold); 
+            color: var(--gold); 
+            padding: 10px 6px; 
+            font-size: 11px; 
+            text-transform: uppercase; 
+            white-space: nowrap; 
+        }
+        td { 
+            padding: 8px 6px; 
+            border-bottom: 1px solid var(--border); 
+            text-align: center; 
+        }
+        
+        .input-tbl { 
+            background: #040a06; 
+            border: 1px solid var(--border); 
+            color: white; 
+            padding: 6px; 
+            border-radius: 4px; 
+            text-align: center; 
+            width: 100%; 
+            outline: none; 
+            font-size: 13px; 
+        }
+        .input-tbl:focus { border-color: var(--gold); }
+        
+        .venda-tag { font-size: 9.5px; padding: 2px 5px; border-radius: 4px; font-weight: bold; display: inline-block; margin: 2px 1px; }
+        .tag-pix { background: rgba(46, 204, 113, 0.15); color: var(--pix); border: 1px solid var(--pix); }
+        .tag-card { background: rgba(255, 255, 255, 0.1); color: var(--card-tag); border: 1px solid #555; }
+        .tag-brinde { background: rgba(52, 152, 219, 0.15); color: var(--brinde); border: 1px solid var(--brinde); }
+        
+        .btn-v { border: none; padding: 6px 4px; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 9.5px; text-transform: uppercase; }
+        .btn-pix { background: var(--gold); color: #000; width: 44px; }
+        .btn-card { background: #fff; color: #000; width: 48px; }
+        .btn-brinde { background: var(--brinde); color: #fff; width: 52px; }
+        .btn-undo { background: var(--danger); color: white; width: 28px; font-size: 11px; }
+        
+        .actions { 
+            display: flex; 
+            justify-content: center; 
+            gap: 8px; 
+            margin-top: 18px; 
+            flex-wrap: wrap; 
+        }
+        .btn-main { 
+            padding: 10px 16px; 
+            border-radius: 6px; 
+            cursor: pointer; 
+            font-weight: bold; 
+            border: none; 
+            text-transform: uppercase; 
+            font-size: 11px; 
+            transition: 0.2s; 
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .btn-add { background: var(--palmeiras-green); color: white; border: 1px solid var(--gold); }
+        .btn-add:hover { background: var(--palmeiras-light); }
+        .btn-finalizar { background: var(--gold); color: #000; }
+        .btn-finalizar:hover { background: #c29d2b; }
+        .btn-pdf-geral { background: #1a1a1a; color: white; border: 1px solid #444; }
+        .btn-excel { background: #107c41; color: white; }
+        .btn-excel:hover { background: #0b5a2f; }
+        .btn-novo-evento { background: transparent; color: #aaa; border: 1px solid #333; }
+        .btn-novo-evento:hover { color: var(--danger); border-color: var(--danger); }
+
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 1000; justify-content: center; align-items: center; padding: 15px; }
+        .modal-content { background: var(--card); border: 2px solid var(--gold); border-radius: 10px; width: 100%; max-width: 720px; max-height: 90vh; overflow-y: auto; padding: 20px; box-sizing: border-box; }
+        .modal-row { display: flex; justify-content: space-between; border-bottom: 1px dashed var(--border); padding: 8px 0; font-size: 13px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header-banner">
+        <div></div>
+        <h2>Kings Merch <span style="font-weight: 800; color: #fff;">Control Pro</span></h2>
+        <button class="btn-toggle-privacidade" id="btn-privacidade" onclick="alternarVisibilidadeValores()">
+            👁️ Ocultar Valores
+        </button>
+    </div>
+    
+    <div class="event-info">
+        <input type="text" id="event-name" class="input-event" placeholder="NOME DO EVENTO / ARTISTA" oninput="salvarNoNavegador()">
+        <input type="date" id="event-date" class="input-event" oninput="salvarNoNavegador()">
+    </div>
+
+    <div class="config-header">
+        <div>TAXA CARTÃO: <input type="number" id="t-car" class="config-input" value="4.98" step="0.01" onchange="render()"> %</div>
+        <div>COMISSÃO AGÊNCIA: <input type="number" id="t-com" class="config-input" value="10.00" step="0.1" onchange="render()"> %</div>
+    </div>
+
+    <div class="finance-grid">
+        <div class="fin-box"><span>📦 Peças Recebidas</span><b id="res-total-pecas" style="color:#aaa;">0 un</b></div>
+        <div class="fin-box"><span>👕 Peças Vendidas</span><b id="res-total-vendidas" style="color:var(--success);">0 un</b></div>
+        <div class="fin-box"><span>💰 Faturamento Bruto</span><b id="res-bruto">R$ 0,00</b></div>
+        <div class="fin-box"><span>🤝 Repasse Consignado</span><b id="res-repasse">R$ 0,00</b></div>
+        <div class="fin-box" style="border-color: var(--gold);"><span>🍀 Lucro Agência</span><b id="res-meu" style="color: var(--success);">R$ 0,00</b></div>
+    </div>
+
+    <div class="table-responsive">
+        <table>
+            <thead>
+                <tr>
+                    <th style="text-align: left; width: 26%;">Produto</th>
+                    <th style="width: 22%;">Lançar</th>
+                    <th style="width: 10%;">Preço</th>
+                    <th style="width: 8%;">Recebido</th>
+                    <th style="width: 8%;">Vendido</th>
+                    <th style="width: 8%; color: var(--brinde);">Brinde</th>
+                    <th style="width: 8%;">Estoque</th>
+                    <th style="width: 6%;">Consig?</th>
+                    <th style="width: 4%;"></th>
+                </tr>
+            </thead>
+            <tbody id="corpo"></tbody>
+        </table>
+    </div>
+
+    <div class="actions">
+        <button onclick="addItem()" class="btn-main btn-add">➕ Item</button>
+        <button onclick="finalizarEvento()" class="btn-main btn-finalizar">🏁 Finalizar Evento</button>
+        <button onclick="gerarRelatorio('completo')" class="btn-main btn-pdf-geral">📄 Gerar PDF</button>
+        <button onclick="exportarExcel()" class="btn-main btn-excel">📊 Exportar Excel</button>
+        <button onclick="abrirNovoEvento()" class="btn-main btn-novo-evento">🔄 Novo Evento (Limpar)</button>
+    </div>
+</div>
+
+<div id="modal-finalizar" class="modal">
+    <div class="modal-content">
+        <h3 style="color: var(--gold); margin-top: 0; border-bottom: 2px solid var(--palmeiras-green); padding-bottom: 8px;">
+            🏁 Resumo de Fechamento de Vendas
+        </h3>
+        
+        <div id="dados-finalizacao"></div>
+
+        <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px;">
+            <button class="btn-main btn-pdf-geral" onclick="fecharModal()">Fechar</button>
+            <button class="btn-main btn-finalizar" onclick="gerarRelatorio('completo')">Exportar PDF</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    let dados = JSON.parse(localStorage.getItem('kings_merch_v15_db')) || [];
+    let historico = [];
+    let ocultarValores = JSON.parse(localStorage.getItem('kings_ocultar_valores')) || false;
+
+    // Massa inicial para demonstração pública no GitHub
+    function carregarDadosDemonstracao() {
+        return [
+            { nome: "Camiseta Tour Edição Limitada", preco: 120.00, inicial: 80, vPix: 25, vCar: 30, vBrinde: 2, consig: true },
+            { nome: "Boné Alviverde Premium", preco: 85.00, inicial: 50, vPix: 14, vCar: 18, vBrinde: 1, consig: true },
+            { nome: "Moletom Canguru Heavyweight", preco: 250.00, inicial: 35, vPix: 10, vCar: 12, vBrinde: 0, consig: false },
+            { nome: "Copo Térmico Colecionável", preco: 45.00, inicial: 100, vPix: 42, vCar: 38, vBrinde: 5, consig: true }
+        ];
+    }
+
+    function alternarVisibilidadeValores() {
+        ocultarValores = !ocultarValores;
+        localStorage.setItem('kings_ocultar_valores', JSON.stringify(ocultarValores));
+        atualizarBotaoPrivacidade();
+        render();
+    }
+
+    function atualizarBotaoPrivacidade() {
+        const btn = document.getElementById('btn-privacidade');
+        if (ocultarValores) {
+            btn.innerHTML = '🙈 Mostrar Valores';
+            btn.style.borderColor = 'var(--danger)';
+            btn.style.color = 'var(--danger)';
+        } else {
+            btn.innerHTML = '👁️ Ocultar Valores';
+            btn.style.borderColor = 'var(--gold)';
+            btn.style.color = 'var(--gold)';
+        }
+    }
+
+    function formatarValorMoeda(num) {
+        if (ocultarValores) return '••••••';
+        return num.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+    }
+
+    function render() {
+        const corpo = document.getElementById('corpo');
+        const tCar = (parseFloat(document.getElementById('t-car').value) || 0) / 100;
+        const tCom = (parseFloat(document.getElementById('t-com').value) || 0) / 100;
+        corpo.innerHTML = '';
+        
+        let brutoT = 0, repasseT = 0, lucroT = 0;
+        let totalRecebido = 0, totalVendido = 0;
+
+        dados.forEach((p, i) => {
+            const vendidos = (p.vPix || 0) + (p.vCar || 0);
+            const brindes = p.vBrinde || 0;
+            const estoque = (p.inicial || 0) - (vendidos + brindes);
+            const bruto = vendidos * (p.preco || 0);
+            const taxaMaq = ((p.vCar || 0) * (p.preco || 0)) * tCar;
+            
+            totalRecebido += (p.inicial || 0);
+            totalVendido += vendidos;
+            brutoT += bruto;
+
+            if (p.consig) {
+                const comAgencia = bruto * tCom;
+                repasseT += (bruto - taxaMaq - comAgencia);
+                lucroT += comAgencia;
+            } else {
+                lucroT += (bruto - taxaMaq);
+            }
+
+            corpo.innerHTML += `
+                <tr>
+                    <td style="text-align: left;">
+                        <input type="text" value="${p.nome || ''}" onchange="update(${i},'nome',this.value)" class="input-tbl" style="text-align: left; font-weight: bold;">
+                        <div>
+                            <span class="venda-tag tag-pix">PIX: ${p.vPix || 0}</span>
+                            <span class="venda-tag tag-card">CARD: ${p.vCar || 0}</span>
+                            <span class="venda-tag tag-brinde">BRINDE: ${brindes}</span>
+                        </div>
+                    </td>
+                    <td>
+                        <button class="btn-v btn-pix" title="Venda no Pix" onclick="venda(${i},'vPix')">PIX</button> 
+                        <button class="btn-v btn-card" title="Venda no Cartão" onclick="venda(${i},'vCar')">CARD</button>
+                        <button class="btn-v btn-brinde" title="Brinde / Banda / Staff" onclick="venda(${i},'vBrinde')">BRINDE</button>
+                        <button class="btn-v btn-undo" title="Desfazer último lançamento" onclick="desfazer(${i})">↩</button>
+                    </td>
+                    <td>
+                        <input type="number" 
+                               value="${p.preco || 0}" 
+                               step="0.5" 
+                               onchange="update(${i},'preco',this.value)" 
+                               class="input-tbl" 
+                               style="width:75px; font-family: monospace; font-weight:bold;">
+                    </td>
+                    <td><input type="number" value="${p.inicial || 0}" onchange="update(${i},'inicial',this.value)" class="input-tbl" style="width:60px;"></td>
+                    <td><b style="font-size: 14px;">${vendidos}</b></td>
+                    <td><b style="font-size: 14px; color: var(--brinde);">${brindes}</b></td>
+                    <td style="color:${estoque <= 3 ? 'var(--danger)' : 'var(--success)'}; font-weight:bold; font-size: 14px;">${estoque}</td>
+                    <td><input type="checkbox" ${p.consig ? 'checked' : ''} onchange="update(${i},'consig',this.checked)"></td>
+                    <td><button onclick="remover(${i})" style="color:var(--danger); background:none; border:none; cursor:pointer; font-weight:bold; font-size:16px;">×</button></td>
+                </tr>
+            `;
+        });
+
+        document.getElementById('res-total-pecas').innerText = totalRecebido + ' un';
+        document.getElementById('res-total-vendidas').innerText = totalVendido + ' un';
+        document.getElementById('res-bruto').innerText = formatarValorMoeda(brutoT);
+        document.getElementById('res-repasse').innerText = formatarValorMoeda(repasseT);
+        document.getElementById('res-meu').innerText = formatarValorMoeda(lucroT);
+        
+        salvarNoNavegador();
+    }
+
+    function venda(i, tipo) {
+        const item = dados[i];
+        const saidas = (item.vPix || 0) + (item.vCar || 0) + (item.vBrinde || 0);
+        if (saidas < item.inicial) {
+            item[tipo] = (item[tipo] || 0) + 1;
+            historico.push({ idx: i, tipo: tipo });
+            render();
+        } else {
+            alert("Atenção: Quantidade recebida já foi totalmente consumida!");
+        }
+    }
+
+    function desfazer(i) {
+        const last = historico.map(h => h.idx).lastIndexOf(i);
+        if (last > -1) {
+            const acao = historico.splice(last, 1)[0];
+            if (dados[acao.idx][acao.tipo] > 0) {
+                dados[acao.idx][acao.tipo]--;
+            }
+            render();
+        }
+    }
+
+    function update(i, campo, val) {
+        dados[i][campo] = (campo === 'nome' || campo === 'consig') ? val : (parseFloat(val) || 0);
+        render();
+    }
+
+    function addItem() {
+        dados.push({ nome: "Novo Item", preco: 0, inicial: 0, vPix: 0, vCar: 0, vBrinde: 0, consig: true });
+        render();
+    }
+
+    function remover(i) {
+        if (confirm("Deseja realmente remover este produto?")) {
+            dados.splice(i, 1);
+            render();
+        }
+    }
+
+    function finalizarEvento() {
+        const ev = document.getElementById('event-name').value || "Não informado";
+        const dt = document.getElementById('event-date').value || "--/--/--";
+        const tCar = (parseFloat(document.getElementById('t-car').value) || 0) / 100;
+        const tCom = (parseFloat(document.getElementById('t-com').value) || 0) / 100;
+
+        let totalVendidas = 0, totalBrindes = 0, totalRecebidas = 0;
+        let brutoPix = 0, brutoCard = 0, faturamentoTotal = 0;
+        let taxasTotais = 0, comissaoTotal = 0, repasseTotal = 0, lucroTotal = 0;
+
+        let itensResumoHtml = '';
+
+        dados.forEach(p => {
+            const vPix = p.vPix || 0;
+            const vCar = p.vCar || 0;
+            const brindes = p.vBrinde || 0;
+            const vendidos = vPix + vCar;
+            const estoque = (p.inicial || 0) - (vendidos + brindes);
+
+            const valorBruto = vendidos * (p.preco || 0);
+            const taxaMaq = (vCar * (p.preco || 0)) * tCar;
+            const comAgencia = p.consig ? (valorBruto * tCom) : 0;
+            const liq = p.consig ? (valorBruto - taxaMaq - comAgencia) : (valorBruto - taxaMaq);
+
+            totalRecebidas += (p.inicial || 0);
+            totalVendidas += vendidos;
+            totalBrindes += brindes;
+            brutoPix += (vPix * (p.preco || 0));
+            brutoCard += (vCar * (p.preco || 0));
+            faturamentoTotal += valorBruto;
+            taxasTotais += taxaMaq;
+            comissaoTotal += comAgencia;
+
+            if (p.consig) repasseTotal += liq;
+            lucroTotal += (p.consig ? comAgencia : liq);
+
+            if (vendidos > 0 || brindes > 0) {
+                itensResumoHtml += `
+                    <div style="font-size:12px; padding: 4px 0; border-bottom: 1px dotted #222;">
+                        <b>${p.nome}</b>: ${vendidos} vend. (Pix: ${vPix} | Card: ${vCar}) ${brindes > 0 ? '| <span style="color:var(--brinde)">' + brindes + ' brindes</span>' : ''} | Sobraram: ${estoque} un.
+                    </div>
+                `;
+            }
+        });
+
+        const modalDiv = document.getElementById('dados-finalizacao');
+        modalDiv.innerHTML = `
+            <div class="modal-row"><span>Evento / Show:</span><b>${ev}</b></div>
+            <div class="modal-row"><span>Data do Evento:</span><b>${dt}</b></div>
+            <div class="modal-row"><span>Volume Físico de Peças:</span><b>${totalRecebidas} recebidas | ${totalVendidas} vendidas | ${totalBrindes} brindes</b></div>
+            <div class="modal-row"><span>Faturamento PIX:</span><b style="color:var(--pix); font-family:monospace;">${formatarValorMoeda(brutoPix)}</b></div>
+            <div class="modal-row"><span>Faturamento CARTÃO:</span><b style="color:#aaa; font-family:monospace;">${formatarValorMoeda(brutoCard)}</b></div>
+            <div class="modal-row" style="border-top: 1px solid var(--gold); margin-top:6px;"><span>FATURAMENTO COMERCIAL BRUTO:</span><b style="color:var(--gold); font-family:monospace;">${formatarValorMoeda(faturamentoTotal)}</b></div>
+            <div class="modal-row"><span>(-) Taxas Retidas por Cartão:</span><span style="color:var(--danger); font-family:monospace;">${formatarValorMoeda(taxasTotais)}</span></div>
+            <div class="modal-row"><span>(-) Comissão da Agência:</span><span style="color:var(--brinde); font-family:monospace;">${formatarValorMoeda(comissaoTotal)}</span></div>
+            <div class="modal-row"><span>(=) Repasse ao Artista / Consignado:</span><b style="font-family:monospace;">${formatarValorMoeda(repasseTotal)}</b></div>
+            <div class="modal-row" style="font-size:15px; border-top: 2px solid var(--success); padding-top:10px;">
+                <span style="color:var(--success);">LUCRO LÍQUIDO FINAL AGÊNCIA:</span>
+                <b style="color:var(--success); font-family:monospace;">${formatarValorMoeda(lucroTotal)}</b>
+            </div>
+            
+            <h4 style="color:var(--gold); margin: 15px 0 5px 0;">Detalhamento por Item Movimentado:</h4>
+            ${itensResumoHtml || '<p style="color:#777; font-size:12px;">Nenhum item vendido até o momento.</p>'}
+        `;
+
+        document.getElementById('modal-finalizar').style.display = 'flex';
+    }
+
+    function fecharModal() {
+        document.getElementById('modal-finalizar').style.display = 'none';
+    }
+
+    function abrirNovoEvento() {
+        if (confirm("Atenção! Esta ação irá limpar todos os lançamentos para começar um novo evento em branco. Deseja continuar?")) {
+            localStorage.removeItem('kings_merch_v15_db');
+            localStorage.removeItem('kings_merch_meta');
+            dados = [];
+            historico = [];
+            document.getElementById('event-name').value = '';
+            document.getElementById('event-date').value = '';
+            document.getElementById('t-car').value = '4.98';
+            document.getElementById('t-com').value = '10.00';
+            addItem();
+        }
+    }
+
+    function exportarExcel() {
+        const ev = document.getElementById('event-name').value || "Evento";
+        const tCar = (parseFloat(document.getElementById('t-car').value) || 0) / 100;
+        const tCom = (parseFloat(document.getElementById('t-com').value) || 0) / 100;
+
+        const relatorio = dados.map(p => {
+            const vendidos = (p.vPix || 0) + (p.vCar || 0);
+            const brindes = p.vBrinde || 0;
+            const estoque = (p.inicial || 0) - (vendidos + brindes);
+            const bruto = vendidos * (p.preco || 0);
+            const taxaMaq = ((p.vCar || 0) * (p.preco || 0)) * tCar;
+            const comAgencia = p.consig ? (bruto * tCom) : 0;
+            const liq = p.consig ? (bruto - taxaMaq - comAgencia) : (bruto - taxaMaq);
+
+            return {
+                "Produto": p.nome,
+                "Preço Unitário (R$)": p.preco,
+                "Estoque Inicial": p.inicial,
+                "Vendas PIX": p.vPix || 0,
+                "Vendas Cartão": p.vCar || 0,
+                "Total Vendido": vendidos,
+                "Cortesias / Brindes": brindes,
+                "Estoque Devolvido": estoque,
+                "Consignado?": p.consig ? "Sim" : "Não",
+                "Faturamento Bruto (R$)": bruto,
+                "Taxa Cartão (R$)": taxaMaq,
+                "Comissão Agência (R$)": comAgencia,
+                "Repasse Líquido (R$)": liq
+            };
+        });
+
+        const ws = XLSX.utils.json_to_sheet(relatorio);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "Fechamento");
+        XLSX.writeFile(wb, `Fechamento_${ev.replace(/\s+/g, '_')}.xlsx`);
+    }
+
+    function salvarNoNavegador() {
+        localStorage.setItem('kings_merch_v15_db', JSON.stringify(dados));
+        const meta = {
+            ev: document.getElementById('event-name').value,
+            dt: document.getElementById('event-date').value
+        };
+        localStorage.setItem('kings_merch_meta', JSON.stringify(meta));
+    }
+
+    function carregarDoNavegador() {
+        atualizarBotaoPrivacidade();
+        const meta = JSON.parse(localStorage.getItem('kings_merch_meta'));
+        if (meta) {
+            document.getElementById('event-name').value = meta.ev || '';
+            document.getElementById('event-date').value = meta.dt || '';
+        }
+        
+        // Se a base estiver limpa pela primeira vez, carrega mockup para vitrine
+        if (!dados || dados.length === 0) {
+            dados = carregarDadosDemonstracao();
+            document.getElementById('event-name').value = "Show de Abertura - Arena";
+            document.getElementById('event-date').value = new Date().toISOString().split('T')[0];
+            render();
+        } else {
+            render();
+        }
+    }
+
+    function gerarRelatorio(modo) {
+        fecharModal();
+        const ev = document.getElementById('event-name').value || "EVENTO";
+        const dt = document.getElementById('event-date').value || "--/--/--";
+        const tCar = (parseFloat(document.getElementById('t-car').value) || 0) / 100;
+        const tCom = (parseFloat(document.getElementById('t-com').value) || 0) / 100;
+
+        let lista = modo === 'consignado' ? dados.filter(p => p.consig) : dados;
+        let totalBruto = 0, totalTaxas = 0, totalComissao = 0, totalLiquido = 0;
+        let totalPecRecebidas = 0, totalPecVendidas = 0, totalPecBrindes = 0;
+
+        let html = `
+            <div style="font-family: sans-serif; padding: 25px; color: #111; background-color: #ffffff;">
+                <div style="border-bottom: 2px solid #006437; padding-bottom: 10px; margin-bottom: 15px;">
+                    <h1 style="margin: 0; color: #006437; letter-spacing: 2px; text-transform: uppercase; font-size: 20px;">KINGS MERCH CONTROL PRO</h1>
+                    <p style="margin: 3px 0 0 0; color: #555; font-size: 12px; text-transform: uppercase;">Relatório Analítico de Fechamento de Vendas</p>
+                </div>
+                
+                <p style="font-size: 12px; margin-bottom: 15px;">
+                    <b>Evento:</b> ${ev} &nbsp;&nbsp;|&nbsp;&nbsp; <b>Data:</b> ${dt}
+                </p>
+                
+                <table style="width:100%; border-collapse:collapse; font-size: 11px;">
+                    <thead>
+                        <tr style="background:#f4f6f5;">
+                            <th style="border:1px solid #ddd; padding:6px; text-align:left;">Produto</th>
+                            <th style="border:1px solid #ddd; padding:6px;">Rec.</th>
+                            <th style="border:1px solid #ddd; padding:6px;">Vend.</th>
+                            <th style="border:1px solid #ddd; padding:6px;">Brinde</th>
+                            <th style="border:1px solid #ddd; padding:6px;">Dev.</th>
+                            <th style="border:1px solid #ddd; padding:6px;">Preço</th>
+                            <th style="border:1px solid #ddd; padding:6px;">Bruto</th>
+                            <th style="border:1px solid #ddd; padding:6px;">Líquido</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+        `;
+
+        lista.forEach(p => {
+            const vendidos = (p.vPix || 0) + (p.vCar || 0);
+            const brindes = p.vBrinde || 0;
+            const estoqueDevolvido = (p.inicial || 0) - (vendidos + brindes);
+            const bruto = vendidos * (p.preco || 0);
+            const taxaMaq = ((p.vCar || 0) * (p.preco || 0)) * tCar;
+            const comAgencia = p.consig ? (bruto * tCom) : 0;
+            const liq = p.consig ? (bruto - taxaMaq - comAgencia) : (bruto - taxaMaq);
+
+            totalPecRecebidas += (p.inicial || 0);
+            totalPecVendidas += vendidos;
+            totalPecBrindes += brindes;
+
+            totalBruto += bruto;
+            totalTaxas += taxaMaq;
+            totalComissao += comAgencia;
+            if (p.consig || modo === 'completo') totalLiquido += liq;
+
+            html += `
+                <tr>
+                    <td style="border:1px solid #ddd; padding:6px; font-weight: bold;">${p.nome}</td>
+                    <td style="border:1px solid #ddd; padding:6px; text-align:center;">${p.inicial}</td>
+                    <td style="border:1px solid #ddd; padding:6px; text-align:center; font-weight:bold; color: #006437;">${vendidos}</td>
+                    <td style="border:1px solid #ddd; padding:6px; text-align:center; color: #2980b9;">${brindes}</td>
+                    <td style="border:1px solid #ddd; padding:6px; text-align:center;">${estoqueDevolvido}</td>
+                    <td style="border:1px solid #ddd; padding:6px; text-align:center;">R$ ${p.preco.toFixed(2)}</td>
+                    <td style="border:1px solid #ddd; padding:6px; text-align:center; font-family:monospace;">R$ ${bruto.toFixed(2)}</td>
+                    <td style="border:1px solid #ddd; padding:6px; text-align:center; font-family:monospace; font-weight:bold;">R$ ${liq.toFixed(2)}</td>
+                </tr>
+            `;
+        });
+
+        html += `</tbody></table>
+                <div style="margin-top:20px; font-size: 11px;">
+                    <p><b>Balanço Físico de Peças:</b> ${totalPecRecebidas} recebidas | <b>${totalPecVendidas} vendidas</b> | ${totalPecBrindes} cortesias/brindes</p>
+                </div>
+                <div style="margin-top:15px; text-align:right; border-top: 2px solid #006437; padding-top:10px; font-size: 12px;">
+                    <p style="margin:2px 0;">Faturamento Comercial Bruto: <b style="font-family:monospace;">R$ ${totalBruto.toFixed(2)}</b></p>
+                    <p style="color:#c0392b; margin:2px 0;">(-) Taxas de Cartão/Maquininha: R$ ${totalTaxas.toFixed(2)}</p>
+                    <p style="color:#2980b9; margin:2px 0;">(-) Comissão Agência: R$ ${totalComissao.toFixed(2)}</p>
+                    <hr style="width:200px; margin: 6px 0 6px auto; border: none; border-top: 1px dashed #ccc;">
+                    <h2 style="margin:2px 0 0 0; color: #006437; font-size: 17px;">
+                        ${modo === 'consignado' ? 'Total Repasse Consignado' : 'Total Líquido'}: <span style="font-family:monospace;">R$ ${totalLiquido.toFixed(2)}</span>
+                    </h2>
+                </div>
+            </div>`;
+
+        html2pdf().set({
+            margin: 10, 
+            filename: `Kings_${ev}_Fechamento.pdf`,
+            image: { type: 'jpeg', quality: 0.98 },
+            html2canvas: { scale: 2 },
+            jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+        }).from(html).save();
+    }
+
+    window.onload = carregarDoNavegador;
+</script>
+</body>
+</html>
